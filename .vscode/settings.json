@@ -1,0 +1,23 @@
+{
+    "go.inferGopath": false,
+    "go.languageServerExperimentalFeatures": {
+        "diagnostics": false,
+        "documentLink": true
+    },
+    "go.liveErrors": {
+        "enabled": true,
+        "delay": 0,
+    },
+    "go.gotoSymbol.includeGoroot": true,
+    "go.gotoSymbol.includeImports": true,
+    "go.installDependenciesWhenBuilding": true,
+    "go.lintTool": "golint",
+    "go.trace.server": "messages",
+    "go.useCodeSnippetsOnFunctionSuggest": true,
+    "go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
+    "cSpell.words": [
+        "Ovenoboyo",
+        "bcrypt",
+        "psql"
+    ],
+}
