@@ -1,6 +1,6 @@
 module github.com/Ovenoboyo/basic_webserver/v2
 
-go 1.17
+go 1.16
 
 require (
 	github.com/gorilla/mux v1.8.0
@@ -9,4 +9,4 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 )
 
-require github.com/gobuffalo/here v0.6.0 // indirect
+require github.com/gobuffalo/here v0.6.2 // indirect
