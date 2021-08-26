@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/handlers"
-
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/db"
+	"github.com/Ovenoboyo/basic_webserver/v2/pkg/handlers"
 
 	"github.com/gorilla/mux"
 )
@@ -17,6 +16,8 @@ func main() {
 
 	r := mux.NewRouter()
 	http.Handle("/", r)
+
+	handlers.HandleStatic(r)
 	handlers.HandleLogin(r)
 
 	srv := &http.Server{

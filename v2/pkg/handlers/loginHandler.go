@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/db"
@@ -12,17 +11,22 @@ import (
 )
 
 type successResponse struct {
-	success bool
+	Success bool `json:"success"`
 }
 
 type errorResponse struct {
-	data string
+	Error string `json:"error"`
+}
+
+type authBody struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // HandleLogin handles login and signUp route
 func HandleLogin(router *mux.Router) {
-	router.HandleFunc("/login", login)
-	router.HandleFunc("/register", signUp)
+	router.HandleFunc("/api/login", login)
+	router.HandleFunc("/api/register", signUp)
 }
 
 func hashAndSalt(password string) ([]byte, error) {
@@ -33,43 +37,61 @@ func hashAndSalt(password string) ([]byte, error) {
 func parseForm(req *http.Request) (string, []byte) {
 	err := req.ParseForm()
 	if err != nil {
-		fmt.Println(err)
 		return "", nil
 	}
 
-	username := req.FormValue("username")
-	password := req.FormValue("password")
-
-	saltedPass, err := hashAndSalt(password)
+	var a authBody
+	err = json.NewDecoder(req.Body).Decode(&a)
 	if err != nil {
-		fmt.Println(err)
 		return "", nil
 	}
 
-	return username, saltedPass
+	return a.Username, []byte(a.Password)
 }
 
-func userExists(username string, password []byte) bool {
-	rows, err := db.DbConnection.Query(`SELECT EXISTS(SELECT username FROM auth WHERE password = $1 AND username = $2)`, password, username)
+func validateUser(username string, password []byte) (bool, error) {
+	rows, err := db.DbConnection.Query(`SELECT username, password FROM auth WHERE username = $1`, username)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return false, err
 	}
 
-	exists := false
+	var usernameP string
+	var passwordP []byte
 
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&exists)
+		err := rows.Scan(&usernameP, &passwordP)
 
 		if err != nil {
-			fmt.Println(err)
-			return exists
+			return false, err
 		}
 		break
 	}
 
-	return exists
+	return bcrypt.CompareHashAndPassword(passwordP, password) == nil, nil
+}
+
+func userExists(username string) bool {
+	rows, err := db.DbConnection.Query(`SELECT username FROM auth WHERE username = $1`, username)
+	if err != nil {
+		panic(err)
+		return false
+	}
+
+	var usernameP string
+
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&usernameP)
+
+		if err != nil {
+			panic(err)
+			return true
+		}
+		break
+	}
+
+	return username == usernameP
 }
 
 func writeUser(username string, password []byte) error {
@@ -78,30 +100,51 @@ func writeUser(username string, password []byte) error {
 }
 
 func login(resp http.ResponseWriter, req *http.Request) {
-	username, saltedPass := parseForm(req)
-	userExists := userExists(username, saltedPass)
+	username, password := parseForm(req)
 
-	success := successResponse{userExists}
+	userExists := userExists(username)
+
+	var validated bool
+	var err error
+	var success interface{}
+
+	if userExists {
+		validated, err = validateUser(username, password)
+		if err != nil {
+			success = errorResponse{err.Error()}
+		}
+	}
+
+	success = successResponse{validated}
 
 	resp.Header().Set("Content-Type", "application/json")
+	resp.WriteHeader(http.StatusOK)
 	json.NewEncoder(resp).Encode(success)
 }
 
 func signUp(resp http.ResponseWriter, req *http.Request) {
-	username, saltedPass := parseForm(req)
-
+	username, password := parseForm(req)
 	var ret interface{}
-	if userExists(username, saltedPass) {
-		ret = errorResponse{"user already exists"}
-	} else {
-		err := writeUser(username, saltedPass)
-		if err != nil {
-			ret = errorResponse{err.Error()}
-		} else {
-			ret = successResponse{true}
-		}
-	}
 
+	if len(username) > 0 && len(password) > 0 {
+		if userExists(username) {
+			ret = errorResponse{"user already exists"}
+		} else {
+			saltedPass, err := hashAndSalt(string(password))
+			if err != nil {
+				ret = errorResponse{err.Error()}
+			} else {
+				err = writeUser(username, saltedPass)
+				if err != nil {
+					ret = errorResponse{err.Error()}
+				} else {
+					ret = successResponse{true}
+				}
+			}
+		}
+	} else {
+		ret = errorResponse{"username or password cant be empty"}
+	}
 	resp.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(resp).Encode(ret)
 }
