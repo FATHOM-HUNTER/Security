@@ -1,7 +1,0 @@
-# Remove .sample from filename
-
-export host=<Host name>
-export port=5432
-export user=<Username>
-export password=<Password>
-export dbname=<Database Name>

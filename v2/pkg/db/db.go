@@ -1,20 +1,20 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
-	// Driver for postgresql
-	_ "github.com/lib/pq"
-)
+	// Driver for Azure MySQL
+	_ "github.com/denisenkom/go-mssqldb"
 
-var (
-	host     = os.Getenv("host")
-	port     = os.Getenv("port")
-	user     = os.Getenv("user")
-	password = os.Getenv("password")
-	dbname   = os.Getenv("dbname")
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlserver"
+
+	// Driver for golang-migrate to read files
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 // DbConnection is the Global object for database connection
@@ -22,27 +22,47 @@ var DbConnection *sql.DB
 
 // ConnectToDB Connects to postgresql db
 func ConnectToDB() {
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+	var (
+		server   = os.Getenv("DB_SERVER")
+		user     = os.Getenv("DB_USER")
+		password = os.Getenv("DB_PASSWORD")
+		database = os.Getenv("DATABASE")
+	)
+
+	psqlInfo := fmt.Sprintf("server=%s;user id=%s;password=%s;port=1433;database=%s;",
+		server, user, password, database)
 
 	var err error
 
-	DbConnection, err = sql.Open("postgres", psqlInfo)
+	DbConnection, err = sql.Open("sqlserver", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
 
-	migrate()
+	ctx := context.Background()
+	err = DbConnection.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	fmt.Println("Connected!")
+
+	migrateDB()
 }
 
-func migrate() {
-	_, err := DbConnection.Exec(`CREATE TABLE IF NOT EXISTS auth (
-		username text PRIMARY KEY,
-		password text NOT NULL
-		);`)
-
+func migrateDB() {
+	fmt.Println("Migrating")
+	driver, err := sqlserver.WithInstance(DbConnection, &sqlserver.Config{})
 	if err != nil {
 		panic(err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://migrations/", "sqlserver", driver)
+	if err != nil {
+		panic(err)
+	}
+
+	err = m.Migrate(1)
+	if err != nil {
+		log.Println(err)
 	}
 }

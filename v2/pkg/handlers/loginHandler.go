@@ -8,6 +8,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/google/uuid"
 )
 
 type successResponse struct {
@@ -50,13 +52,13 @@ func parseForm(req *http.Request) (string, []byte) {
 }
 
 func validateUser(username string, password []byte) (bool, error) {
-	rows, err := db.DbConnection.Query(`SELECT username, password FROM auth WHERE username = $1`, username)
+	rows, err := db.DbConnection.Query(`SELECT username, password FROM auth WHERE username = @p1`, username)
 	if err != nil {
 		return false, err
 	}
 
 	var usernameP string
-	var passwordP []byte
+	var passwordP string
 
 	defer rows.Close()
 	for rows.Next() {
@@ -68,11 +70,11 @@ func validateUser(username string, password []byte) (bool, error) {
 		break
 	}
 
-	return bcrypt.CompareHashAndPassword(passwordP, password) == nil, nil
+	return bcrypt.CompareHashAndPassword([]byte(passwordP), password) == nil, nil
 }
 
 func userExists(username string) bool {
-	rows, err := db.DbConnection.Query(`SELECT username FROM auth WHERE username = $1`, username)
+	rows, err := db.DbConnection.Query(`SELECT username FROM auth WHERE username = @p1`, username)
 	if err != nil {
 		panic(err)
 		return false
@@ -95,7 +97,8 @@ func userExists(username string) bool {
 }
 
 func writeUser(username string, password []byte) error {
-	_, err := db.DbConnection.Exec(`INSERT INTO auth (username, password) VALUES ($1, $2)`, username, password)
+	uid := uuid.New()
+	_, err := db.DbConnection.Exec(`INSERT INTO auth (username, uid, password) VALUES (@p1, @p2, @p3)`, username, uid, string(password))
 	return err
 }
 

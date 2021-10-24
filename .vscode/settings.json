@@ -16,36 +16,10 @@
     "go.useCodeSnippetsOnFunctionSuggest": true,
     "go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
     "cSpell.words": [
-        "Ovenoboyo",
         "bcrypt",
+        "denisenkom",
+        "Ovenoboyo",
         "packr",
         "psql"
-    ],
-    "sqltools.connections": [
-        {
-            "mysqlOptions": {
-                "authProtocol": "default"
-            },
-            "previewLimit": 50,
-            "server": "192.168.0.18",
-            "port": 3306,
-            "driver": "MariaDB",
-            "name": "Rpi",
-            "group": "Symbiosis",
-            "username": "sahil",
-            "password": "9797",
-            "database": "sahil"
-        },
-        {
-            "previewLimit": 50,
-            "server": "localhost",
-            "port": 5432,
-            "askForPassword": true,
-            "driver": "PostgreSQL",
-            "name": "local",
-            "group": "Symbiosis",
-            "database": "basic",
-            "username": "postgres"
-        }
-    ],
+    ]
 }
