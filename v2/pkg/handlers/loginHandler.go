@@ -89,6 +89,7 @@ func signUp(w http.ResponseWriter, r *http.Request) {
 		}
 
 		encodeSuccess(w, nil)
+		return
 
 	}
 	encodeError(w, http.StatusInternalServerError, "Username or password cannot be empty")
