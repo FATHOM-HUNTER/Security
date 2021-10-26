@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +12,7 @@ import (
 	"path/filepath"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/Ovenoboyo/basic_webserver/v2/pkg/db"
 	"github.com/google/uuid"
 )
 
@@ -32,38 +35,6 @@ func InitializeStorage() {
 	URL, _ := url.Parse(
 		fmt.Sprintf("https://%s.blob.core.windows.net/%s", accountName, containerName))
 	containerURL = azblob.NewContainerURL(*URL, p)
-
-	ctx := context.Background()
-	_, err = containerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessNone)
-	if err != nil {
-		// Ignore if already created
-	}
-
-	// fmt.Printf("Creating a dummy file to test the upload and download\n")
-	// data := []byte("hello world this is a blob\n")
-	// fileName := "randomfile.txt"
-	// err = ioutil.WriteFile(fileName, data, 0700)
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return
-	// }
-
-	// blobURL := containerURL.NewBlockBlobURL(fileName)
-	// file, err := os.Open(fileName)
-
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return
-	// }
-
-	// fmt.Printf("Uploading the file with blob name: %s\n", fileName)
-	// _, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
-	// 	BlockSize:   4 * 1024 * 1024,
-	// 	Parallelism: 16})
-
-	// if err != nil {
-	// 	log.Println(err)
-	// }
 }
 
 func writeToLocalStorage(readerCloser *io.ReadCloser) (string, error) {
@@ -89,9 +60,20 @@ func writeToLocalStorage(readerCloser *io.ReadCloser) (string, error) {
 	return fileName, nil
 }
 
+func getMD5(file *os.File) string {
+	h := md5.New()
+	if _, err := io.Copy(h, file); err != nil {
+		log.Fatal(err)
+	}
+	sum := md5.Sum(nil)
+	return hex.EncodeToString(sum[:])
+}
+
 // UploadToStorage will upload blob from reader to azure storage
-func UploadToStorage(readCloser *io.ReadCloser, destination string) error {
+func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) error {
 	fileName, err := writeToLocalStorage(readCloser)
+	defer os.Remove(fileName)
+
 	if err != nil {
 		return err
 	}
@@ -110,9 +92,22 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string) error {
 		return err
 	}
 
+	md5 := getMD5(file)
+	stat, err := os.Stat(fileName)
+	if err != nil {
+		return err
+	}
+
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
 		BlockSize:   4 * 1024 * 1024,
 		Parallelism: 16})
 
+	if err != nil {
+		return err
+	}
+
+	err = db.AddFileMetaToDB(destination, md5, uid, int(stat.Size()))
+
 	return err
+
 }

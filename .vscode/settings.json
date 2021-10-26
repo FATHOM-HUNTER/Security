@@ -19,6 +19,7 @@
         "azblob",
         "bcrypt",
         "denisenkom",
+        "negroni",
         "Ovenoboyo",
         "packr",
         "psql"

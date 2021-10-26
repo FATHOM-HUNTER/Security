@@ -22,12 +22,15 @@
 </html>
 
 <script>
+    let uid
+    let token
+
     document.getElementById("login").onclick = () => {
-        sendReq('/api/login')
+        sendReq('/login')
     }
 
     document.getElementById("register").onclick = () => {
-        sendReq('/api/register')
+        sendReq('/register')
     }
 
     document.getElementById("upload").onclick = () => {
@@ -37,14 +40,19 @@
     uploadFile = () => {
         const file = document.getElementById("fileUpload")
         console.log(file.files[0])
-        fetch('/api/upload?path=' + file.files[0].name, {
-            method: 'POST',
-            body: file.files[0]
-        }).then(r => {
-            console.log(r)
-        }).catch(e => {
-            console.log(e)
-        })
+        if (uid && token) {
+            fetch('/api/upload?path=' + file.files[0].name + "&uid=" + uid, {
+                method: 'POST',
+                headers: new Headers({
+                    'Authorization': 'Bearer ' + token,
+                }),
+                body: file.files[0]
+            }).then(r => {
+                console.log(r)
+            }).catch(e => {
+                console.log(e)
+            })
+        }
     }
 
     sendReq = (url) => {
@@ -57,6 +65,12 @@
         }).then(resp => resp.json()).then(json => {
             if (json.success !== undefined) {
                 document.getElementById('status').innerText = json.success ? 'Success' : 'Failed'
+                if (url === '/login' && json.success) {
+                    uid = json.data.uid
+                    token = json.data.token
+
+                    console.log(token)
+                }
             }
 
             if (json.error !== undefined) {

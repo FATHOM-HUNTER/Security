@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/db"
+	"github.com/Ovenoboyo/basic_webserver/v2/pkg/middleware"
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/bcrypt"
@@ -14,8 +17,8 @@ import (
 
 // HandleLogin handles login and signUp route
 func HandleLogin(router *mux.Router) {
-	router.HandleFunc("/api/login", login)
-	router.HandleFunc("/api/register", signUp)
+	router.HandleFunc("/login", login)
+	router.HandleFunc("/register", signUp)
 }
 
 func hashAndSalt(password string) ([]byte, error) {
@@ -38,26 +41,32 @@ func parseForm(req *http.Request) (string, []byte) {
 	return a.Username, []byte(a.Password)
 }
 
-func validateUser(username string, password []byte) (bool, error) {
-	rows, err := db.DbConnection.Query(`SELECT username, password FROM auth WHERE username = @p1`, username)
+func validateUser(username string, password []byte) (bool, string, error) {
+	rows, err := db.DbConnection.Query(`SELECT username, password, uid FROM auth WHERE username = @p1`, username)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	var usernameP string
 	var passwordP string
+	var uidP string
 
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&usernameP, &passwordP)
+		err := rows.Scan(&usernameP, &passwordP, &uidP)
 
 		if err != nil {
-			return false, err
+			return false, "", err
 		}
 		break
 	}
 
-	return bcrypt.CompareHashAndPassword([]byte(passwordP), password) == nil, nil
+	success := bcrypt.CompareHashAndPassword([]byte(passwordP), password) == nil
+	if success {
+		return true, uidP, nil
+	}
+
+	return false, "", errors.New("Invalid username or password")
 }
 
 func userExists(username string) bool {
@@ -91,25 +100,50 @@ func writeUser(username string, password []byte) error {
 
 func login(resp http.ResponseWriter, req *http.Request) {
 	username, password := parseForm(req)
-
 	userExists := userExists(username)
 
-	var validated bool
-	var err error
-	var success interface{}
+	resp.Header().Set("Content-Type", "application/json")
 
 	if userExists {
-		validated, err = validateUser(username, password)
+		validated, uid, err := validateUser(username, password)
 		if err != nil {
-			success = errorResponse{err.Error()}
+			log.Println("here")
+			resp.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(resp).Encode(errorResponse{
+				Error: err.Error(),
+			})
+			return
+		}
+		if validated {
+			token, err := middleware.GenerateToken()
+			if err != nil {
+				log.Println("here1")
+				resp.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(resp).Encode(errorResponse{
+					Error: err.Error(),
+				})
+				return
+			}
+			resp.WriteHeader(http.StatusOK)
+			json.NewEncoder(resp).Encode(successResponse{
+				Success: true,
+				Data: authResponse{
+					UID:   uid,
+					Token: token,
+				},
+			})
+			return
+		} else {
+			resp.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(resp).Encode(errorResponse{
+				Error: "Invalid username/password",
+			})
 		}
 	}
 
-	success = successResponse{validated}
-
-	resp.Header().Set("Content-Type", "application/json")
-	resp.WriteHeader(http.StatusOK)
-	json.NewEncoder(resp).Encode(success)
+	json.NewEncoder(resp).Encode(errorResponse{
+		Error: "User does not exist",
+	})
 }
 
 func signUp(resp http.ResponseWriter, req *http.Request) {
@@ -128,7 +162,9 @@ func signUp(resp http.ResponseWriter, req *http.Request) {
 				if err != nil {
 					ret = errorResponse{err.Error()}
 				} else {
-					ret = successResponse{true}
+					ret = successResponse{
+						Success: true,
+					}
 				}
 			}
 		}
