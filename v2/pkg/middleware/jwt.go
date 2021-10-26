@@ -28,16 +28,9 @@ func errHandler(w http.ResponseWriter, r *http.Request, err string) {
 	log.Println(err)
 }
 
-func customHandler(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	log.Println(r.Header.Get("Authorization"))
-
-	jwtMiddleware.HandlerWithNext(w, r, next)
-}
-
 // GetJWTWrappedNegroni returns a negroni instance wrapping a router
 func GetJWTWrappedNegroni(mux *mux.Router) *negroni.Negroni {
-
-	return negroni.New(negroni.HandlerFunc(customHandler), negroni.Wrap(mux))
+	return negroni.New(negroni.HandlerFunc(jwtMiddleware.HandlerWithNext), negroni.Wrap(mux))
 }
 
 // GenerateToken generates a new jwt token

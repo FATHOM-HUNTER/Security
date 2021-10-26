@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/db"
+	db "github.com/Ovenoboyo/basic_webserver/v2/pkg/database"
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/handlers"
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/middleware"
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/storage"
