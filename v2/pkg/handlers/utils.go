@@ -12,7 +12,7 @@ func encodeError(w http.ResponseWriter, status int, err string) {
 	})
 }
 
-func encodeSuccess(w http.ResponseWriter, data ...interface{}) {
+func encodeSuccess(w http.ResponseWriter, data interface{}) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(successResponse{
 		Success: true,

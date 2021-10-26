@@ -53,12 +53,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			encodeSuccess(w, successResponse{
-				Success: true,
-				Data: authResponse{
-					UID:   uid,
-					Token: token,
-				},
+			encodeSuccess(w, authResponse{
+				UID:   uid,
+				Token: token,
 			})
 			return
 		}
@@ -91,7 +88,7 @@ func signUp(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		encodeSuccess(w)
+		encodeSuccess(w, nil)
 
 	}
 	encodeError(w, http.StatusInternalServerError, "Username or password cannot be empty")
