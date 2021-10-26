@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
 func encodeError(w http.ResponseWriter, status int, err string) {
+	log.Println(err)
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(errorResponse{
 		Error: err,
