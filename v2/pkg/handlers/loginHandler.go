@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/crypto"
@@ -33,34 +32,28 @@ func parseForm(req *http.Request) (string, []byte) {
 	return a.Username, []byte(a.Password)
 }
 
-func login(resp http.ResponseWriter, req *http.Request) {
-	username, password := parseForm(req)
+func login(w http.ResponseWriter, r *http.Request) {
+	username, password := parseForm(r)
 	userExists := db.UserExists(username)
 
-	resp.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 
 	if userExists {
+
 		validated, uid, err := db.ValidateUser(username, password)
 		if err != nil {
-			log.Println("here")
-			resp.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(resp).Encode(errorResponse{
-				Error: err.Error(),
-			})
+			encodeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+
 		if validated {
 			token, err := middleware.GenerateToken()
 			if err != nil {
-				log.Println("here1")
-				resp.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(resp).Encode(errorResponse{
-					Error: err.Error(),
-				})
+				encodeError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
-			resp.WriteHeader(http.StatusOK)
-			json.NewEncoder(resp).Encode(successResponse{
+
+			encodeSuccess(w, successResponse{
 				Success: true,
 				Data: authResponse{
 					UID:   uid,
@@ -68,44 +61,38 @@ func login(resp http.ResponseWriter, req *http.Request) {
 				},
 			})
 			return
-		} else {
-			resp.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(resp).Encode(errorResponse{
-				Error: "Invalid username/password",
-			})
 		}
+
+		encodeError(w, http.StatusUnauthorized, "Invalid username/password")
+		return
 	}
 
-	json.NewEncoder(resp).Encode(errorResponse{
-		Error: "User does not exist",
-	})
+	encodeError(w, http.StatusUnauthorized, "User does not exist")
 }
 
-func signUp(resp http.ResponseWriter, req *http.Request) {
-	username, password := parseForm(req)
-	var ret interface{}
+func signUp(w http.ResponseWriter, r *http.Request) {
+	username, password := parseForm(r)
 
 	if len(username) > 0 && len(password) > 0 {
 		if db.UserExists(username) {
-			ret = errorResponse{"user already exists"}
-		} else {
-			saltedPass, err := crypto.HashAndSalt(string(password))
-			if err != nil {
-				ret = errorResponse{err.Error()}
-			} else {
-				err = db.WriteUser(username, saltedPass)
-				if err != nil {
-					ret = errorResponse{err.Error()}
-				} else {
-					ret = successResponse{
-						Success: true,
-					}
-				}
-			}
+			encodeError(w, http.StatusBadRequest, "User already exists")
+			return
 		}
-	} else {
-		ret = errorResponse{"username or password cant be empty"}
+
+		saltedPass, err := crypto.HashAndSalt(string(password))
+		if err != nil {
+			encodeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		err = db.WriteUser(username, saltedPass)
+		if err != nil {
+			encodeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		encodeSuccess(w)
+
 	}
-	resp.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(resp).Encode(ret)
+	encodeError(w, http.StatusInternalServerError, "Username or password cannot be empty")
 }
