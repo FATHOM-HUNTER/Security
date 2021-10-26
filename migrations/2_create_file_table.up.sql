@@ -4,7 +4,7 @@ CREATE TABLE file_meta (
     last_modified BIGINT NOT NULL,
     md5_hash TEXT NOT NULL,
     file_contents BIGINT NOT NULL,
-    version INT NOT NULL,
+    version VARCHAR(28) NOT NULL,
     CONSTRAINT pk_filename_version PRIMARY KEY (file_name, version),
     CONSTRAINT FK_uid_uid FOREIGN KEY (uid) REFERENCES auth (uid)
 );

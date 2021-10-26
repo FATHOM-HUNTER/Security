@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -65,7 +66,7 @@ func getMD5(file *os.File) string {
 	if _, err := io.Copy(h, file); err != nil {
 		log.Fatal(err)
 	}
-	sum := md5.Sum(nil)
+	sum := h.Sum(nil)
 	return hex.EncodeToString(sum[:])
 }
 
@@ -98,6 +99,15 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 		return err
 	}
 
+	exists, version, err := db.GetExistingFile(destination, md5)
+	if err != nil {
+		return err
+	}
+
+	if exists && len(version) != 0 {
+		return errors.New("Exact similar file already exists")
+	}
+
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
 		BlockSize:   4 * 1024 * 1024,
 		Parallelism: 16})
@@ -106,7 +116,12 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 		return err
 	}
 
-	err = db.AddFileMetaToDB(destination, md5, uid, int(stat.Size()))
+	props, err := blobURL.GetProperties(ctx, azblob.BlobAccessConditions{}, azblob.ClientProvidedKeyOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = db.AddFileMetaToDB(destination, md5, uid, int(stat.Size()), props.VersionID())
 
 	return err
 

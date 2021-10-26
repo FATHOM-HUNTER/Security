@@ -3,6 +3,7 @@ package database
 import (
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,22 +17,54 @@ type FileMetadata struct {
 }
 
 // AddFileMetaToDB adds uploaded file to database
-func AddFileMetaToDB(fileName string, md5 string, uid string, contents int) error {
+func AddFileMetaToDB(fileName string, md5 string, uid string, contents int, version string) error {
 	lastModified := strconv.FormatInt(time.Now().UnixMilli(), 10)
-	_, err := dbConnection.Exec(`INSERT INTO file_meta (file_name, uid, last_modified, md5_hash, file_contents, version) VALUES (@p1, @p2, @p3, @p4, @p5, @p6)`, fileName, uid, lastModified, md5, contents, 1)
+	_, err := dbConnection.Exec(`INSERT INTO file_meta (file_name, uid, last_modified, md5_hash, file_contents, version) VALUES (@p1, @p2, @p3, @p4, @p5, @p6)`, fileName, uid, lastModified, md5, contents, version)
 
 	return err
+}
+
+// GetExistingFile check if file name already exists in database and if contents match too
+func GetExistingFile(fileName string, hash string) (exists bool, lastVersion string, err error) {
+	rows, err := dbConnection.Query(`SELECT file_name, md5_hash, version FROM file_meta WHERE file_name = @p1`, fileName)
+	if err != nil {
+		return false, "", err
+	}
+
+	defer rows.Close()
+	existing := make([]FileMetadata, 0)
+
+	for rows.Next() {
+		data := FileMetadata{}
+		rows.Scan(&data.FileName, &data.MD5Hash, &data.Version)
+		existing = append(existing, data)
+	}
+
+	if len(existing) > 0 {
+		for _, file := range existing {
+			if file.Version > lastVersion {
+				lastVersion = file.Version
+			}
+
+			if strings.TrimSpace(file.MD5Hash) == strings.TrimSpace(hash) {
+				return true, lastVersion, nil
+			}
+		}
+		return true, "", nil
+	}
+
+	return false, "", nil
 }
 
 // ListFilesForUser returns all files uploaded by the user with given UID
 func ListFilesForUser(uid string) (ret []FileMetadata, err error) {
 	rows, err := dbConnection.Query(`SELECT file_name, uid, last_modified, md5_hash, file_contents, version FROM file_meta WHERE uid = @p1`, uid)
-	defer rows.Close()
-
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	defer rows.Close()
 
 	for rows.Next() {
 		data := FileMetadata{}
