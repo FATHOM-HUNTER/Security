@@ -1,3 +1,4 @@
 setupenv.sh
 webserver
 config.env
+tmp/*

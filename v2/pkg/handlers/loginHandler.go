@@ -12,19 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type successResponse struct {
-	Success bool `json:"success"`
-}
-
-type errorResponse struct {
-	Error string `json:"error"`
-}
-
-type authBody struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 // HandleLogin handles login and signUp route
 func HandleLogin(router *mux.Router) {
 	router.HandleFunc("/api/login", login)
