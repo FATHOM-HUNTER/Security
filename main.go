@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	db "github.com/Ovenoboyo/basic_webserver/pkg/database"
 	"github.com/Ovenoboyo/basic_webserver/pkg/handlers"
@@ -40,5 +41,9 @@ func main() {
 	n := negroni.Classic()
 	n.UseHandler(r)
 
-	n.Run(":8080")
+	port := "8080"
+	if os.Getenv("DEBUG") == "FALSE" {
+		port = "80"
+	}
+	n.Run(":" + port)
 }
