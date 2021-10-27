@@ -4,7 +4,16 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"github.com/form3tech-oss/jwt-go"
 )
+
+type jwtClaims struct {
+	ExpiresAt int64
+	Issuer    string
+	UID       string
+	jwt.Claims
+}
 
 func encodeError(w http.ResponseWriter, status int, err string) {
 	log.Println(err)
@@ -20,4 +29,8 @@ func encodeSuccess(w http.ResponseWriter, data interface{}) {
 		Success: true,
 		Data:    data,
 	})
+}
+
+func parseJWTToken(r *http.Request) string {
+	return r.Context().Value("user").(*jwt.Token).Claims.(jwtClaims).UID
 }

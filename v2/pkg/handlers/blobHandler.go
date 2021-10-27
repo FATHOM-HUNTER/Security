@@ -16,7 +16,7 @@ func HandleBlobs(router *mux.Router) {
 
 func uploadBlob(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Query().Get("path")
-	uid := r.URL.Query().Get("uid")
+	uid := parseJWTToken(r)
 
 	if len(uid) > 0 && len(filePath) > 0 {
 		err := storage.UploadToStorage(&r.Body, filePath, uid)
@@ -34,7 +34,7 @@ func uploadBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 func listBlobs(w http.ResponseWriter, r *http.Request) {
-	uid := r.URL.Query().Get("uid")
+	uid := parseJWTToken(r)
 	if len(uid) > 0 {
 		data, err := db.ListFilesForUser(uid)
 		if err != nil {

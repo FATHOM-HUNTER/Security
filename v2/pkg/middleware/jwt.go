@@ -34,9 +34,10 @@ func GetJWTWrappedNegroni(mux *mux.Router) *negroni.Negroni {
 }
 
 // GenerateToken generates a new jwt token
-func GenerateToken() (string, error) {
-	return jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
-		Issuer:    "nameOfWebsiteHere",
-	}).SignedString([]byte(secret))
+func GenerateToken(uid string) (string, error) {
+	claims := make(jwt.MapClaims, 0)
+	claims["ExpiresAt"] = time.Now().Add(time.Hour * 72).Unix()
+	claims["Issuer"] = "nameOfWebsiteHere"
+	claims["UID"] = uid
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
 }

@@ -47,14 +47,13 @@ func login(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if validated {
-			token, err := middleware.GenerateToken()
+			token, err := middleware.GenerateToken(uid)
 			if err != nil {
 				encodeError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
 			encodeSuccess(w, authResponse{
-				UID:   uid,
 				Token: token,
 			})
 			return
