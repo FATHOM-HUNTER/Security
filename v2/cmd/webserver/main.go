@@ -9,6 +9,7 @@ import (
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/middleware"
 	"github.com/Ovenoboyo/basic_webserver/v2/pkg/storage"
 	"github.com/joho/godotenv"
+	"github.com/markbates/pkger"
 	"github.com/urfave/negroni"
 
 	"github.com/gorilla/mux"
@@ -22,6 +23,8 @@ func main() {
 
 	db.ConnectToDB()
 	storage.InitializeStorage()
+
+	pkger.Include("/static")
 
 	r := mux.NewRouter()
 	apiRouter := mux.NewRouter()
