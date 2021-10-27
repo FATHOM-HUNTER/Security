@@ -2,7 +2,7 @@ package database // ValidateUser validates user credentials from database
 import (
 	"errors"
 
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/crypto"
+	"github.com/Ovenoboyo/basic_webserver/pkg/crypto"
 	"github.com/google/uuid"
 )
 

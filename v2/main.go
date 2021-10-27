@@ -4,10 +4,10 @@ import (
 	"log"
 	"net/http"
 
-	db "github.com/Ovenoboyo/basic_webserver/v2/pkg/database"
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/handlers"
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/middleware"
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/storage"
+	db "github.com/Ovenoboyo/basic_webserver/pkg/database"
+	"github.com/Ovenoboyo/basic_webserver/pkg/handlers"
+	"github.com/Ovenoboyo/basic_webserver/pkg/middleware"
+	"github.com/Ovenoboyo/basic_webserver/pkg/storage"
 	"github.com/joho/godotenv"
 	"github.com/markbates/pkger"
 	"github.com/urfave/negroni"
@@ -41,5 +41,5 @@ func main() {
 	n := negroni.Classic()
 	n.UseHandler(r)
 
-	n.Run(":8080")
+	n.Run(":80")
 }

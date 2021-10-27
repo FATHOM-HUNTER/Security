@@ -1,4 +1,6 @@
 setupenv.sh
-webserver
 config.env
+pkged.go
 tmp/*
+static/
+webserver

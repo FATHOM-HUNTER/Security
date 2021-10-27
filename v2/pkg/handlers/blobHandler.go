@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	db "github.com/Ovenoboyo/basic_webserver/v2/pkg/database"
-	"github.com/Ovenoboyo/basic_webserver/v2/pkg/storage"
+	db "github.com/Ovenoboyo/basic_webserver/pkg/database"
+	"github.com/Ovenoboyo/basic_webserver/pkg/storage"
 	"github.com/gorilla/mux"
 )
 
