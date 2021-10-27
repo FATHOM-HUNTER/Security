@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"net/http"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/markbates/pkger"
 
@@ -14,7 +14,7 @@ import (
 
 // HandleStatic serves static files on route /
 func HandleStatic(mux *mux.Router) {
-	mux.HandleFunc("/", serveStatic)
+	mux.PathPrefix("/").HandlerFunc(serveStatic)
 }
 
 func serveStatic(w http.ResponseWriter, r *http.Request) {
@@ -26,12 +26,19 @@ func serveStatic(w http.ResponseWriter, r *http.Request) {
 		}
 		io.Copy(w, file)
 	} else {
-		w.Header().Add("Cache-Control", "max-age=604800000")
-		split := strings.Split(r.URL.Path, "/")
-		file, err := pkger.Open(filepath.Join("/static/", split[len(split)-2], split[len(split)-1]))
+		file, err := pkger.Open(filepath.Join("/static", r.URL.Path))
 		if err != nil {
-			panic(err)
+			log.Println(err)
 		}
+
+		if ext == ".js" {
+			w.Header().Set("Content-Type", "application/javascript")
+		}
+
+		if ext == ".css" {
+			w.Header().Set("Content-Type", "text/css")
+		}
+
 		io.Copy(w, file)
 	}
 }

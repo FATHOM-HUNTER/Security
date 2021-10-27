@@ -31,15 +31,14 @@ func main() {
 	apiRouterNegroni := middleware.GetJWTWrappedNegroni(apiRouter)
 
 	r.PathPrefix("/api").Handler(apiRouterNegroni)
-
 	http.Handle("/", r)
 
-	handlers.HandleStatic(r)
 	handlers.HandleBlobs(apiRouter)
 	handlers.HandleLogin(r)
+	handlers.HandleStatic(r)
 
 	n := negroni.Classic()
 	n.UseHandler(r)
 
-	n.Run(":80")
+	n.Run(":8080")
 }

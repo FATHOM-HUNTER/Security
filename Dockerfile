@@ -29,18 +29,19 @@ RUN mkdir -p /app/v2
 
 # Copy the module files first and then download the dependencies. If this
 # doesn't change, we won't need to do this again in future builds.
-COPY v2/go.* /app/v2/
+COPY go.* /app/
 
-WORKDIR /app/v2
+WORKDIR /app
 RUN go mod download
 RUN go mod verify
 
+RUN go install github.com/markbates/pkger/cmd/pkger
+
 # Copy the source code into the container.
-COPY v2/pkg pkg
-COPY v2/cmd cmd
+COPY pkg pkg
+COPY main.go .
 COPY --from=frontenv /build/dist static
 
-RUN go install github.com/markbates/pkger/cmd/pkger
 RUN pkger
 
 RUN go build -o /go/bin/app

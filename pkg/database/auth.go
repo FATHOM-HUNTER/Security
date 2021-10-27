@@ -1,6 +1,7 @@
 package database // ValidateUser validates user credentials from database
 import (
 	"errors"
+	"log"
 
 	"github.com/Ovenoboyo/basic_webserver/pkg/crypto"
 	"github.com/google/uuid"
@@ -38,7 +39,7 @@ func ValidateUser(username string, password []byte) (bool, string, error) {
 func UserExists(username string) bool {
 	rows, err := dbConnection.Query(`SELECT username FROM auth WHERE username = @p1`, username)
 	if err != nil {
-		panic(err)
+		log.Println(err)
 		return false
 	}
 
@@ -49,7 +50,7 @@ func UserExists(username string) bool {
 		err := rows.Scan(&usernameP)
 
 		if err != nil {
-			panic(err)
+			log.Println(err)
 			return true
 		}
 		break
