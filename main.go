@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	db "github.com/Ovenoboyo/basic_webserver/pkg/database"
 	"github.com/Ovenoboyo/basic_webserver/pkg/handlers"
@@ -14,6 +15,7 @@ import (
 	"github.com/urfave/negroni"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 func main() {
@@ -38,10 +40,20 @@ func main() {
 	handlers.HandleLogin(r)
 	handlers.HandleStatic(r)
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		MaxAge:           int(12 * time.Hour),
+	})
+
 	n := negroni.Classic()
+	n.Use(c)
+	apiRouterNegroni.Use(c)
 	n.UseHandler(r)
 
-	port := "8080"
+	port := "8081"
 	if os.Getenv("DEBUG") == "FALSE" {
 		port = "80"
 	}
