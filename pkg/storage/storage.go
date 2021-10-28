@@ -126,9 +126,9 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 	return err
 }
 
-func DownloadBlob(fileName string, uid string) (io.ReadCloser, error) {
+func DownloadBlob(fileName string, uid string, version string) (io.ReadCloser, error) {
 	ctx := context.Background()
-	blobURL := containerURL.NewBlockBlobURL(fileName + "-" + uid)
+	blobURL := containerURL.NewBlockBlobURL(fileName + "-" + uid).WithVersionID(version)
 	resp, err := blobURL.Download(ctx, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false, azblob.ClientProvidedKeyOptions{})
 	if err != nil {
 		return nil, err

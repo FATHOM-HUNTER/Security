@@ -86,10 +86,10 @@ func deleteBlobs(w http.ResponseWriter, r *http.Request) {
 func downloadBlobs(w http.ResponseWriter, r *http.Request) {
 	uid := parseJWTToken(r)
 	fileName := r.URL.Query().Get("path")
-	// version := r.URL.Query().Get("version")
+	version := r.URL.Query().Get("version")
 
-	if len(fileName) > 0 /* && len(version) > 0 */ {
-		stream, err := storage.DownloadBlob(fileName, uid)
+	if len(fileName) > 0 && len(version) > 0 {
+		stream, err := storage.DownloadBlob(fileName, uid, version)
 		if err != nil {
 			encodeError(w, http.StatusInternalServerError, err.Error())
 			return
