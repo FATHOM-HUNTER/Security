@@ -13,20 +13,22 @@ import (
 	"path/filepath"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/Ovenoboyo/basic_webserver/pkg/database"
 	db "github.com/Ovenoboyo/basic_webserver/pkg/database"
 	"github.com/google/uuid"
 )
 
-const (
-	containerName = "azureproject"
-	accountName   = "projectstorage69"
+var (
+	containerName = os.Getenv("STORAGE_CONTAINER")
+	accountName   = os.Getenv("STORAGE_ACCOUNT")
+	accountKey    = os.Getenv("STORAGE_KEY")
 )
 
 var containerURL azblob.ContainerURL
 
 // InitializeStorage creates azure storage instances
 func InitializeStorage() {
-	credential, err := azblob.NewSharedKeyCredential("projectstorage69", "+kpPRjIysUxKy2QhxRsJRrFGmOoJY/3o6eD4ZTOqTqC7wABPS0CUyvn3dzbOy4MYtBQ8sS+VO1SbxPmqupwgNA==")
+	credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
 	if err != nil {
 		log.Println(err)
 	}
@@ -136,4 +138,16 @@ func DownloadBlob(fileName string, uid string, version string) (io.ReadCloser, e
 
 	bodyStream := resp.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
 	return bodyStream, nil
+}
+
+func DeleteBlob(fileName string, uid string, version string) error {
+	ctx := context.Background()
+	_, err := containerURL.NewBlockBlobURL(fileName+"-"+uid).WithVersionID(version).Delete(ctx, azblob.DeleteSnapshotsOptionNone, azblob.BlobAccessConditions{})
+	if err != nil {
+		_, err := containerURL.NewBlockBlobURL(fileName+"-"+uid).Delete(ctx, azblob.DeleteSnapshotsOptionInclude, azblob.BlobAccessConditions{})
+		if err != nil {
+			return err
+		}
+	}
+	return database.RemoveBlob(uid, fileName, version)
 }

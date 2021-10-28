@@ -15,7 +15,7 @@ func HandleBlobs(router *mux.Router) {
 	router.HandleFunc("/api/upload", uploadBlob).Methods("POST")
 	router.HandleFunc("/api/list", listBlobs).Methods("GET")
 	router.HandleFunc("/api/download", downloadBlobs).Methods("GET")
-	router.HandleFunc("/api/delete", downloadBlobs).Methods("POST")
+	router.HandleFunc("/api/delete", deleteBlobs).Methods("POST")
 
 }
 
@@ -71,7 +71,7 @@ func deleteBlobs(w http.ResponseWriter, r *http.Request) {
 
 	if len(fileName) > 0 && len(version) > 0 {
 
-		err := db.RemoveBlob(uid, fileName, version)
+		err := storage.DeleteBlob(fileName, uid, version)
 		if err != nil {
 			encodeError(w, http.StatusBadRequest, err.Error())
 			return
@@ -100,5 +100,4 @@ func downloadBlobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	encodeError(w, http.StatusBadRequest, "Filename and version must be provided")
-
 }
