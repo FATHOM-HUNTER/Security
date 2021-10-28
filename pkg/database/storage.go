@@ -25,8 +25,8 @@ func AddFileMetaToDB(fileName string, md5 string, uid string, contents int, vers
 }
 
 // GetExistingFile check if file name already exists in database and if contents match too
-func GetExistingFile(fileName string, hash string) (exists bool, lastVersion string, err error) {
-	rows, err := dbConnection.Query(`SELECT file_name, md5_hash, version FROM file_meta WHERE file_name = @p1`, fileName)
+func GetExistingFile(fileName string, hash string, uid string) (exists bool, lastVersion string, err error) {
+	rows, err := dbConnection.Query(`SELECT file_name, md5_hash, version FROM file_meta WHERE file_name = @p1 AND uid = @p2`, fileName, uid)
 	if err != nil {
 		return false, "", err
 	}

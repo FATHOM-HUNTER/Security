@@ -99,7 +99,7 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 		return err
 	}
 
-	exists, version, err := db.GetExistingFile(destination, md5)
+	exists, version, err := db.GetExistingFile(destination, md5, uid)
 	if err != nil {
 		return err
 	}

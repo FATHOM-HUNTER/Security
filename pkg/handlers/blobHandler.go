@@ -97,6 +97,7 @@ func downloadBlobs(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
 		encodeSuccessHeader(w)
 		io.Copy(w, stream)
+		return
 	}
 	encodeError(w, http.StatusBadRequest, "Filename and version must be provided")
 

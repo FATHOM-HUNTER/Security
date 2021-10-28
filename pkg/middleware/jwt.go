@@ -33,6 +33,18 @@ func GetJWTWrappedNegroni(mux *mux.Router) *negroni.Negroni {
 	return negroni.New(negroni.HandlerFunc(jwtMiddleware.HandlerWithNext), negroni.Wrap(mux))
 }
 
+// ValidateToken validates jwt auth token
+func ValidateToken(token string) bool {
+	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 // GenerateToken generates a new jwt token
 func GenerateToken(uid string) (string, error) {
 	claims := make(jwt.MapClaims, 0)

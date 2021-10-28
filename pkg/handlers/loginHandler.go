@@ -15,6 +15,7 @@ import (
 func HandleLogin(router *mux.Router) {
 	router.HandleFunc("/login", login)
 	router.HandleFunc("/register", signUp)
+	router.HandleFunc("/validate", validateToken)
 }
 
 func parseAuthForm(req *http.Request) (string, []byte) {
@@ -92,4 +93,12 @@ func signUp(w http.ResponseWriter, r *http.Request) {
 
 	}
 	encodeError(w, http.StatusInternalServerError, "Username or password cannot be empty")
+}
+
+func validateToken(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	encodeSuccessHeader(w)
+	json.NewEncoder(w).Encode(successResponse{
+		Success: middleware.ValidateToken(token),
+	})
 }
