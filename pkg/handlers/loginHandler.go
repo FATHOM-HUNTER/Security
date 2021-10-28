@@ -16,6 +16,7 @@ func HandleLogin(router *mux.Router) {
 	router.HandleFunc("/login", login)
 	router.HandleFunc("/register", signUp)
 	router.HandleFunc("/validate", validateToken)
+	router.HandleFunc("/health", healthCheck)
 }
 
 func parseAuthForm(req *http.Request) (string, []byte) {
@@ -101,4 +102,8 @@ func validateToken(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(successResponse{
 		Success: middleware.ValidateToken(token),
 	})
+}
+
+func healthCheck(w http.ResponseWriter, r *http.Request) {
+	encodeSuccessHeader(w)
 }
