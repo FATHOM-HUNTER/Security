@@ -17,7 +17,7 @@ func HandleLogin(router *mux.Router) {
 	router.HandleFunc("/register", signUp)
 }
 
-func parseForm(req *http.Request) (string, []byte) {
+func parseAuthForm(req *http.Request) (string, []byte) {
 	err := req.ParseForm()
 	if err != nil {
 		return "", nil
@@ -33,7 +33,7 @@ func parseForm(req *http.Request) (string, []byte) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	username, password := parseForm(r)
+	username, password := parseAuthForm(r)
 	userExists := db.UserExists(username)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -67,7 +67,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func signUp(w http.ResponseWriter, r *http.Request) {
-	username, password := parseForm(r)
+	username, password := parseAuthForm(r)
 
 	if len(username) > 0 && len(password) > 0 {
 		if db.UserExists(username) {

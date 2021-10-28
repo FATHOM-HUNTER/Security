@@ -14,6 +14,11 @@ type authBody struct {
 	Password string `json:"password"`
 }
 
+type deleteBody struct {
+	FileName string `json:"file_name"`
+	Version  string `json:"version"`
+}
+
 type authResponse struct {
 	Token string `json:"token"`
 }

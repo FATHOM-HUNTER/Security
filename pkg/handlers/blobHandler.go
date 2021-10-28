@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 
 	db "github.com/Ovenoboyo/basic_webserver/pkg/database"
@@ -12,6 +14,9 @@ import (
 func HandleBlobs(router *mux.Router) {
 	router.HandleFunc("/api/upload", uploadBlob).Methods("POST")
 	router.HandleFunc("/api/list", listBlobs).Methods("GET")
+	router.HandleFunc("/api/download", downloadBlobs).Methods("GET")
+	router.HandleFunc("/api/delete", downloadBlobs).Methods("POST")
+
 }
 
 func uploadBlob(w http.ResponseWriter, r *http.Request) {
@@ -43,4 +48,56 @@ func listBlobs(w http.ResponseWriter, r *http.Request) {
 		}
 		encodeSuccess(w, data)
 	}
+}
+
+func parseDeleteForm(req *http.Request) (string, string) {
+	err := req.ParseForm()
+	if err != nil {
+		return "", ""
+	}
+
+	var a deleteBody
+	err = json.NewDecoder(req.Body).Decode(&a)
+	if err != nil {
+		return "", ""
+	}
+
+	return a.FileName, a.Version
+}
+
+func deleteBlobs(w http.ResponseWriter, r *http.Request) {
+	uid := parseJWTToken(r)
+	fileName, version := parseDeleteForm(r)
+
+	if len(fileName) > 0 && len(version) > 0 {
+
+		err := db.RemoveBlob(uid, fileName, version)
+		if err != nil {
+			encodeError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		encodeSuccess(w, nil)
+		return
+	}
+	encodeError(w, http.StatusBadRequest, "Filename and version must be provided")
+}
+
+func downloadBlobs(w http.ResponseWriter, r *http.Request) {
+	uid := parseJWTToken(r)
+	fileName := r.URL.Query().Get("path")
+	// version := r.URL.Query().Get("version")
+
+	if len(fileName) > 0 /* && len(version) > 0 */ {
+		stream, err := storage.DownloadBlob(fileName, uid)
+		if err != nil {
+			encodeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+		encodeSuccessHeader(w)
+		io.Copy(w, stream)
+	}
+	encodeError(w, http.StatusBadRequest, "Filename and version must be provided")
+
 }

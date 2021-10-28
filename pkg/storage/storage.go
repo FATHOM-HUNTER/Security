@@ -85,7 +85,7 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 		// Ignore if already created
 	}
 
-	blobURL := containerURL.NewBlockBlobURL(destination)
+	blobURL := containerURL.NewBlockBlobURL(destination + "-" + uid)
 	file, err := os.Open(fileName)
 	defer file.Close()
 
@@ -124,5 +124,16 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 	err = db.AddFileMetaToDB(destination, md5, uid, int(stat.Size()), props.VersionID())
 
 	return err
+}
 
+func DownloadBlob(fileName string, uid string) (io.ReadCloser, error) {
+	ctx := context.Background()
+	blobURL := containerURL.NewBlockBlobURL(fileName + "-" + uid)
+	resp, err := blobURL.Download(ctx, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false, azblob.ClientProvidedKeyOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	bodyStream := resp.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
+	return bodyStream, nil
 }

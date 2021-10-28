@@ -74,3 +74,8 @@ func ListFilesForUser(uid string) (ret []FileMetadata, err error) {
 
 	return
 }
+
+func RemoveBlob(uid string, fileName string, version string) error {
+	_, err := dbConnection.Exec(`DELETE FROM file_meta WHERE file_name = @p1 AND version = @p2 AND uid = @p3`, fileName, version, uid)
+	return err
+}

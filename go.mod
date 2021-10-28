@@ -21,6 +21,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/joho/godotenv v1.4.0
+	github.com/rs/cors v1.8.0
 	github.com/urfave/negroni v1.0.0
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/net v0.0.0-20211020060615-d418f374d309 // indirect
