@@ -18,16 +18,16 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	containerName = os.Getenv("STORAGE_CONTAINER")
-	accountName   = os.Getenv("STORAGE_ACCOUNT")
-	accountKey    = os.Getenv("STORAGE_KEY")
-)
-
 var containerURL azblob.ContainerURL
 
 // InitializeStorage creates azure storage instances
 func InitializeStorage() {
+	var (
+		containerName = os.Getenv("STORAGE_CONTAINER")
+		accountName   = os.Getenv("STORAGE_ACCOUNT")
+		accountKey    = os.Getenv("STORAGE_KEY")
+	)
+
 	credential, err := azblob.NewSharedKeyCredential(accountName, accountKey)
 	if err != nil {
 		log.Println(err)
