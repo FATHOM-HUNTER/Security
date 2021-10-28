@@ -28,7 +28,8 @@ func serveStatic(w http.ResponseWriter, r *http.Request) {
 	} else {
 		file, err := pkger.Open(filepath.Join("/static", r.URL.Path))
 		if err != nil {
-			log.Println(err)
+			log.Println(r.URL.Path, err)
+			return
 		}
 
 		if ext == ".js" {
