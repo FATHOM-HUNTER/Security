@@ -15,7 +15,7 @@ docker-build:
 docker-run: docker-build
 	docker run -p 8081:8081 azurewebserver.azurecr.io/webserver
 
-docker push: 
+docker-push: 
 	docker push azurewebserver.azurecr.io/webserver
 
 run: build
