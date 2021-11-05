@@ -51,7 +51,13 @@ Compile and bundle the frontend
 yarn build
 ```
 
-Copy the generated bundle to the Go app
+Copy the generated bundle to static directory
+
+```bash
+mkdir ../static
+cp dist/ ../static
+```
+
 then simply run
 
 To generate a binary
