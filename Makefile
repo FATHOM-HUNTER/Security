@@ -20,5 +20,4 @@ docker-push:
 
 run: build
 	chmod +x ./webserver
-	# sudo setcap 'cap_net_bind_service=+ep' ./webserver
 	./webserver
