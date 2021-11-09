@@ -1,6 +1,6 @@
 # Cloud storage implementation using Azure Services
 
-This project demonstrates the usage of [Azure Storage SDK](https://github.com/Azure/azure-storage-blob-go/azblob) and [SQL Database on Azure](https://azure.microsoft.com/products/azure-sql/database/) along with JWT tokens for authentication and some other features.
+This project demonstrates the usage of [Azure Storage SDK](https://github.com/Azure/azure-storage-blob-go) and [SQL Database on Azure](https://azure.microsoft.com/products/azure-sql/database/) along with JWT tokens for authentication and some other features.
 
 Frontend can be found [here](https://github.com/Ovenoboyo/azure-cloud-storage-frontend)
 
