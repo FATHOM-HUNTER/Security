@@ -14,6 +14,12 @@ Frontend can be found [here](https://github.com/Ovenoboyo/azure-cloud-storage-fr
 - Download / Delete files by version
 - Good looking frontend (subjective)
 
+## Implementation and screenshots
+
+![login page](screenshots/login.png)
+![register page](screenshots/register.png)
+![dashboard page](screenshots/dashboard.png)
+
 ## How to build
 
 Clone this repository along with submodules
