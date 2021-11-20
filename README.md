@@ -67,7 +67,7 @@ mkdir ../static
 cp dist/ ../static
 ```
 
-then simply run
+then run
 
 To generate a binary
 
