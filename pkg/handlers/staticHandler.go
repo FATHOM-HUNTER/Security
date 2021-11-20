@@ -40,6 +40,14 @@ func serveStatic(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/css")
 		}
 
+		if ext == ".svg" {
+			w.Header().Set("Content-Type", "image/svg+xml")
+		}
+
+		if ext == ".ico" {
+			w.Header().Set("Content-Type", "image/x-icon")
+		}
+
 		io.Copy(w, file)
 	}
 }
