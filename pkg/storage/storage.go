@@ -1,12 +1,17 @@
 package storage
 
 import (
+	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/md5"
+	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -40,6 +45,42 @@ func InitializeStorage() {
 	containerURL = azblob.NewContainerURL(*URL, p)
 }
 
+func encryptLocalFile(fileName string) (string, error) {
+	key := "thisis32bitlongpassphraseimusing"
+	block, err := aes.NewCipher([]byte(key))
+	if err != nil {
+		return "", err
+	}
+
+	plaintext, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		log.Fatalf("cipher GCM err: %v", err.Error())
+		return "", err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		log.Fatalf("nonce  err: %v", err.Error())
+		return "", err
+	}
+
+	cipherText := gcm.Seal(nonce, nonce, plaintext, nil)
+
+	encrypted := filepath.Join(filepath.Dir(fileName), "encrypted")
+	err = ioutil.WriteFile(encrypted, cipherText, 0777)
+	if err != nil {
+		log.Fatalf("write file err: %v", err.Error())
+		return "", err
+	}
+
+	return encrypted, nil
+}
+
 func writeToLocalStorage(readerCloser *io.ReadCloser) (string, error) {
 	fileName := filepath.Join("tmp", uuid.New().String())
 	if _, err := os.Stat("tmp"); os.IsNotExist(err) {
@@ -50,13 +91,11 @@ func writeToLocalStorage(readerCloser *io.ReadCloser) (string, error) {
 	defer outFile.Close()
 
 	if err != nil {
-		log.Println(err)
 		return "", err
 	}
 
 	_, err = io.Copy(outFile, *readerCloser)
 	if err != nil {
-		log.Println(err)
 		return "", err
 	}
 
@@ -74,9 +113,15 @@ func getMD5(file *os.File) string {
 
 // UploadToStorage will upload blob from reader to azure storage
 func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) error {
-	fileName, err := writeToLocalStorage(readCloser)
-	defer os.Remove(fileName)
+	plainFile, err := writeToLocalStorage(readCloser)
+	defer os.Remove(plainFile)
 
+	if err != nil {
+		return err
+	}
+
+	fileName, err := encryptLocalFile(plainFile)
+	defer os.Remove(fileName)
 	if err != nil {
 		return err
 	}
@@ -107,7 +152,7 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 	}
 
 	if exists && len(version) != 0 {
-		return errors.New("Exact similar file already exists")
+		return errors.New("Exact file already exists")
 	}
 
 	_, err = azblob.UploadFileToBlockBlob(ctx, file, blobURL, azblob.UploadToBlockBlobOptions{
@@ -128,6 +173,37 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 	return err
 }
 
+func decryptFile(closer *io.ReadCloser) (io.ReadCloser, error) {
+	cipherText, err := io.ReadAll(*closer)
+	if err != nil {
+		return nil, err
+	}
+
+	key := []byte("thisis32bitlongpassphraseimusing")
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		log.Fatalf("cipher err: %v", err.Error())
+		return nil, err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		log.Fatalf("cipher GCM err: %v", err.Error())
+		return nil, err
+	}
+
+	nonce := cipherText[:gcm.NonceSize()]
+	cipherText = cipherText[gcm.NonceSize():]
+	plainText, err := gcm.Open(nil, nonce, cipherText, nil)
+	if err != nil {
+		log.Fatalf("decrypt file err: %v", err.Error())
+		return nil, err
+	}
+
+	return io.NopCloser(bytes.NewReader(plainText)), nil
+}
+
 func DownloadBlob(fileName string, uid string, version string) (io.ReadCloser, error) {
 	ctx := context.Background()
 	blobURL := containerURL.NewBlockBlobURL(fileName + "-" + uid).WithVersionID(version)
@@ -137,7 +213,11 @@ func DownloadBlob(fileName string, uid string, version string) (io.ReadCloser, e
 	}
 
 	bodyStream := resp.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
-	return bodyStream, nil
+	closer, err := decryptFile(&bodyStream)
+	if err != nil {
+		return nil, err
+	}
+	return closer, nil
 }
 
 func DeleteBlob(fileName string, uid string, version string) error {
