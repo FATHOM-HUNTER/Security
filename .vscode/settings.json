@@ -1,9 +1,5 @@
 {
     "go.inferGopath": false,
-    "go.languageServerExperimentalFeatures": {
-        "diagnostics": false,
-        "documentLink": true
-    },
     "go.liveErrors": {
         "enabled": true,
         "delay": 0,
