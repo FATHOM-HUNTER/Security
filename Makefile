@@ -9,14 +9,14 @@ build:
 	pkger
 	go build -o webserver
 
-docker-build:
-	docker build -t azurewebserver.azurecr.io/webserver .
+docker-build: build
+	docker build -t specialization1.azurecr.io/webserver .
 
 docker-run: docker-build
-	docker run -p 8081:8081 azurewebserver.azurecr.io/webserver
+	docker run -p 8081:80 specialization1.azurecr.io/webserver
 
-docker-push: 
-	docker push azurewebserver.azurecr.io/webserver
+docker-push: docker-build
+	docker push specialization1.azurecr.io/webserver
 
 run: build
 	chmod +x ./webserver

@@ -45,8 +45,7 @@ func InitializeStorage() {
 	containerURL = azblob.NewContainerURL(*URL, p)
 }
 
-func encryptLocalFile(fileName string) (string, error) {
-	key := "thisis32bitlongpassphraseimusing"
+func encryptLocalFile(fileName string, key string) (string, error) {
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		return "", err
@@ -71,7 +70,7 @@ func encryptLocalFile(fileName string) (string, error) {
 
 	cipherText := gcm.Seal(nonce, nonce, plaintext, nil)
 
-	encrypted := filepath.Join(filepath.Dir(fileName), "encrypted")
+	encrypted := filepath.Join(filepath.Dir(fileName), uuid.New().String())
 	err = ioutil.WriteFile(encrypted, cipherText, 0777)
 	if err != nil {
 		log.Fatalf("write file err: %v", err.Error())
@@ -112,7 +111,7 @@ func getMD5(file *os.File) string {
 }
 
 // UploadToStorage will upload blob from reader to azure storage
-func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) error {
+func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string, key string) error {
 	plainFile, err := writeToLocalStorage(readCloser)
 	defer os.Remove(plainFile)
 
@@ -120,7 +119,7 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 		return err
 	}
 
-	fileName, err := encryptLocalFile(plainFile)
+	fileName, err := encryptLocalFile(plainFile, key)
 	defer os.Remove(fileName)
 	if err != nil {
 		return err
@@ -173,13 +172,14 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string) 
 	return err
 }
 
-func decryptFile(closer *io.ReadCloser) (io.ReadCloser, error) {
+func decryptFile(closer *io.ReadCloser, k string) (io.ReadCloser, error) {
 	cipherText, err := io.ReadAll(*closer)
 	if err != nil {
 		return nil, err
 	}
 
-	key := []byte("thisis32bitlongpassphraseimusing")
+	log.Println("decrypt key: " + k)
+	key := []byte(k)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -204,7 +204,7 @@ func decryptFile(closer *io.ReadCloser) (io.ReadCloser, error) {
 	return io.NopCloser(bytes.NewReader(plainText)), nil
 }
 
-func DownloadBlob(fileName string, uid string, version string) (io.ReadCloser, error) {
+func DownloadBlob(fileName string, uid string, version string, key string) (io.ReadCloser, error) {
 	ctx := context.Background()
 	blobURL := containerURL.NewBlockBlobURL(fileName + "-" + uid).WithVersionID(version)
 	resp, err := blobURL.Download(ctx, 0, azblob.CountToEnd, azblob.BlobAccessConditions{}, false, azblob.ClientProvidedKeyOptions{})
@@ -213,7 +213,7 @@ func DownloadBlob(fileName string, uid string, version string) (io.ReadCloser, e
 	}
 
 	bodyStream := resp.Body(azblob.RetryReaderOptions{MaxRetryRequests: 20})
-	closer, err := decryptFile(&bodyStream)
+	closer, err := decryptFile(&bodyStream, key)
 	if err != nil {
 		return nil, err
 	}

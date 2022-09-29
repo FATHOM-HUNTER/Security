@@ -21,10 +21,11 @@ func HandleBlobs(router *mux.Router) {
 
 func uploadBlob(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Query().Get("path")
+	key := r.URL.Query().Get("key")
 	uid := parseJWTToken(r)
 
 	if len(uid) > 0 && len(filePath) > 0 {
-		err := storage.UploadToStorage(&r.Body, filePath, uid)
+		err := storage.UploadToStorage(&r.Body, filePath, uid, key)
 
 		if err != nil {
 			encodeError(w, http.StatusInternalServerError, err.Error())
@@ -87,9 +88,10 @@ func downloadBlobs(w http.ResponseWriter, r *http.Request) {
 	uid := parseJWTToken(r)
 	fileName := r.URL.Query().Get("path")
 	version := r.URL.Query().Get("version")
+	key := r.URL.Query().Get("key")
 
 	if len(fileName) > 0 && len(version) > 0 {
-		stream, err := storage.DownloadBlob(fileName, uid, version)
+		stream, err := storage.DownloadBlob(fileName, uid, version, key)
 		if err != nil {
 			encodeError(w, http.StatusInternalServerError, err.Error())
 			return
