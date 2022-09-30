@@ -18,6 +18,5 @@ docker-run: docker-build
 docker-push: docker-build
 	docker push specialization1.azurecr.io/webserver
 
-run: build
-	chmod +x ./webserver
-	./webserver
+run:
+	go run main.go
