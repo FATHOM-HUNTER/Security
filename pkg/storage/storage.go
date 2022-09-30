@@ -46,7 +46,8 @@ func InitializeStorage() {
 }
 
 func encryptLocalFile(fileName string, key string) (string, error) {
-	block, err := aes.NewCipher([]byte(key))
+	keyAes := key[0:32]
+	block, err := aes.NewCipher([]byte(keyAes))
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +59,7 @@ func encryptLocalFile(fileName string, key string) (string, error) {
 
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		log.Fatalf("cipher GCM err: %v", err.Error())
+		log.Fatalf("AES cipher GCM err: %v", err.Error())
 		return "", err
 	}
 
@@ -70,8 +71,16 @@ func encryptLocalFile(fileName string, key string) (string, error) {
 
 	cipherText := gcm.Seal(nonce, nonce, plaintext, nil)
 
+	// Encrypt using des
+	keyDes := key[32:56]
+	cipherTextDes, err := TripleDesEncrypt(cipherText, []byte(keyDes))
+	if err != nil {
+		log.Fatalf("TDES encrypt: %v", err.Error())
+		return "", err
+	}
+
 	encrypted := filepath.Join(filepath.Dir(fileName), uuid.New().String())
-	err = ioutil.WriteFile(encrypted, cipherText, 0777)
+	err = ioutil.WriteFile(encrypted, []byte(cipherTextDes), 0777)
 	if err != nil {
 		log.Fatalf("write file err: %v", err.Error())
 		return "", err
@@ -172,36 +181,43 @@ func UploadToStorage(readCloser *io.ReadCloser, destination string, uid string, 
 	return err
 }
 
-func decryptFile(closer *io.ReadCloser, k string) (io.ReadCloser, error) {
+func decryptFile(closer *io.ReadCloser, key string) (io.ReadCloser, error) {
 	cipherText, err := io.ReadAll(*closer)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Println("decrypt key: " + k)
-	key := []byte(k)
+	keyDes := key[32:56]
+	keyAes := key[0:32]
 
-	block, err := aes.NewCipher(key)
+	plainTextDes, err := TripleDesDecrypt(cipherText, []byte(keyDes))
 	if err != nil {
-		log.Fatalf("cipher err: %v", err.Error())
+		log.Printf("cipher err: %v", err.Error())
 		return nil, err
 	}
 
-	gcm, err := cipher.NewGCM(block)
+	blockAes, err := aes.NewCipher([]byte(keyAes))
 	if err != nil {
-		log.Fatalf("cipher GCM err: %v", err.Error())
+		log.Printf("cipher err: %v", err.Error())
 		return nil, err
 	}
 
-	nonce := cipherText[:gcm.NonceSize()]
-	cipherText = cipherText[gcm.NonceSize():]
-	plainText, err := gcm.Open(nil, nonce, cipherText, nil)
+	gcmAes, err := cipher.NewGCM(blockAes)
+	if err != nil {
+		log.Printf("cipher GCM err: %v", err.Error())
+		return nil, err
+	}
+
+	nonceAes := plainTextDes[:gcmAes.NonceSize()]
+	plainTextDes = plainTextDes[gcmAes.NonceSize():]
+	plainText, err := gcmAes.Open(nil, nonceAes, plainTextDes, nil)
+
 	if err != nil {
 		log.Fatalf("decrypt file err: %v", err.Error())
 		return nil, err
 	}
 
-	return io.NopCloser(bytes.NewReader(plainText)), nil
+	return io.NopCloser(bytes.NewReader([]byte(plainText))), nil
 }
 
 func DownloadBlob(fileName string, uid string, version string, key string) (io.ReadCloser, error) {
