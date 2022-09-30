@@ -16,7 +16,6 @@ func HandleBlobs(router *mux.Router) {
 	router.HandleFunc("/api/list", listBlobs).Methods("GET")
 	router.HandleFunc("/api/download", downloadBlobs).Methods("GET")
 	router.HandleFunc("/api/delete", deleteBlobs).Methods("POST")
-
 }
 
 func uploadBlob(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +84,11 @@ func deleteBlobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func downloadBlobs(w http.ResponseWriter, r *http.Request) {
-	uid := parseJWTToken(r)
+	// uid := parseJWTToken(r)
+	uid := r.URL.Query().Get("uid")
+	if len(uid) == 0 {
+		uid = parseJWTToken(r)
+	}
 	fileName := r.URL.Query().Get("path")
 	version := r.URL.Query().Get("version")
 	key := r.URL.Query().Get("key")
