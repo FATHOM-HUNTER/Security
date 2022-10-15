@@ -213,7 +213,7 @@ func decryptFile(closer *io.ReadCloser, key string) (io.ReadCloser, error) {
 	plainText, err := gcmAes.Open(nil, nonceAes, plainTextDes, nil)
 
 	if err != nil {
-		log.Fatalf("decrypt file err: %v", err.Error())
+		log.Printf("decrypt file err: %v", err.Error())
 		return nil, err
 	}
 
