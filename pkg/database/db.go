@@ -61,7 +61,7 @@ func migrateDB() {
 		panic(err)
 	}
 
-	err = m.Migrate(2)
+	err = m.Migrate(3)
 	if err != nil {
 		log.Println(err)
 	}

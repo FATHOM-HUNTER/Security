@@ -12,6 +12,7 @@ type errorResponse struct {
 type authBody struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 type deleteBody struct {

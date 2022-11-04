@@ -19,24 +19,24 @@ func HandleLogin(router *mux.Router) {
 	router.HandleFunc("/health", healthCheck)
 }
 
-func parseAuthForm(req *http.Request) (string, []byte) {
+func parseAuthForm(req *http.Request) (string, string, []byte) {
 	err := req.ParseForm()
 	if err != nil {
-		return "", nil
+		return "", "", nil
 	}
 
 	var a authBody
 	err = json.NewDecoder(req.Body).Decode(&a)
 	if err != nil {
-		return "", nil
+		return "", "", nil
 	}
 
-	return a.Username, []byte(a.Password)
+	return a.Username, a.Email, []byte(a.Password)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	username, password := parseAuthForm(r)
-	userExists := db.UserExists(username)
+	username, _, password := parseAuthForm(r)
+	userExists := db.UsernameExists(username)
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -69,31 +69,41 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func signUp(w http.ResponseWriter, r *http.Request) {
-	username, password := parseAuthForm(r)
+	username, email, password := parseAuthForm(r)
 
-	if len(username) > 0 && len(password) > 0 {
-		if db.UserExists(username) {
-			encodeError(w, http.StatusBadRequest, "User already exists")
-			return
-		}
-
-		saltedPass, err := crypto.HashAndSalt(string(password))
-		if err != nil {
-			encodeError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		err = db.WriteUser(username, saltedPass)
-		if err != nil {
-			encodeError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		encodeSuccess(w, nil)
+	if len(username) == 0 {
+		encodeError(w, http.StatusInternalServerError, "Username cannot be empty")
 		return
-
 	}
-	encodeError(w, http.StatusInternalServerError, "Username or password cannot be empty")
+
+	if len(password) == 0 {
+		encodeError(w, http.StatusInternalServerError, "Password cannot be empty")
+		return
+	}
+
+	if len(email) == 0 {
+		encodeError(w, http.StatusInternalServerError, "Email cannot be empty")
+		return
+	}
+
+	if db.UsernameAndEmailExists(username, email) {
+		encodeError(w, http.StatusBadRequest, "User with username or email already exists")
+		return
+	}
+
+	saltedPass, err := crypto.HashAndSalt(string(password))
+	if err != nil {
+		encodeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = db.WriteUser(username, email, saltedPass)
+	if err != nil {
+		encodeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	encodeSuccess(w, nil)
 }
 
 func validateToken(w http.ResponseWriter, r *http.Request) {

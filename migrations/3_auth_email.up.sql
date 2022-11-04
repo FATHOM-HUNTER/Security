@@ -1,0 +1,1 @@
+ALTER TABLE auth ADD email varchar(255);

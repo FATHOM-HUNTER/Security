@@ -35,8 +35,7 @@ func ValidateUser(username string, password []byte) (bool, string, error) {
 	return false, "", errors.New("Invalid username or password")
 }
 
-// UserExists checks if user exists in database
-func UserExists(username string) bool {
+func checkUsername(username string) bool {
 	rows, err := dbConnection.Query(`SELECT username FROM auth WHERE username = @p1`, username)
 	if err != nil {
 		log.Println(err)
@@ -59,8 +58,40 @@ func UserExists(username string) bool {
 	return username == usernameP
 }
 
-func WriteUser(username string, password []byte) error {
+func checkEmail(email string) bool {
+	rows, err := dbConnection.Query(`SELECT email FROM auth WHERE email = @p1`, email)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	var emailP string
+
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&emailP)
+
+		if err != nil {
+			log.Println(err)
+			return true
+		}
+		break
+	}
+
+	return email == emailP
+}
+
+// UserExists checks if user exists in database
+func UsernameExists(username string) bool {
+	return checkUsername(username)
+}
+
+func UsernameAndEmailExists(username string, email string) bool {
+	return checkEmail(email) && checkUsername(username)
+}
+
+func WriteUser(username string, email string, password []byte) error {
 	uid := uuid.New()
-	_, err := dbConnection.Exec(`INSERT INTO auth (username, uid, password) VALUES (@p1, @p2, @p3)`, username, uid, string(password))
+	_, err := dbConnection.Exec(`INSERT INTO auth (username, uid, email, password) VALUES (@p1, @p2, @p3, @p4)`, username, uid, email, string(password))
 	return err
 }
