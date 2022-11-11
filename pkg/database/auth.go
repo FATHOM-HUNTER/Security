@@ -95,3 +95,24 @@ func WriteUser(username string, email string, password []byte) error {
 	_, err := dbConnection.Exec(`INSERT INTO auth (username, uid, email, password) VALUES (@p1, @p2, @p3, @p4)`, username, uid, email, string(password))
 	return err
 }
+
+func GetUserEmail(uid string) (string, error) {
+	rows, err := dbConnection.Query(`SELECT email FROM auth WHERE uid = @p1`, uid)
+	if err != nil {
+		return "", err
+	}
+
+	var email string
+
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&email)
+
+		if err != nil {
+			return "", err
+		}
+		break
+	}
+
+	return email, nil
+}

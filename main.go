@@ -38,6 +38,7 @@ func main() {
 
 	handlers.HandleBlobs(apiRouter)
 	handlers.HandleLogin(r)
+	handlers.HandleShares(r)
 	handlers.HandleStatic(r)
 
 	c := cors.New(cors.Options{

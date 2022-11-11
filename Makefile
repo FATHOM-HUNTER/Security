@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-build:
+default:
 	cd frontend && yarn install && yarn build
 	rm -rf static
 	cp -r frontend/dist/ static
@@ -8,6 +8,8 @@ build:
 	rm -f v2/cmd/webserver/pkged.go
 	pkger
 	go build -o webserver
+
+build: default
 
 docker-build: build
 	docker build -t specialization1.azurecr.io/webserver .
@@ -17,6 +19,6 @@ docker-run: docker-build
 
 docker-push: docker-build
 	docker push specialization1.azurecr.io/webserver
-
+ 
 run:
 	go run main.go

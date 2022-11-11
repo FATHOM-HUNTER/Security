@@ -69,8 +69,7 @@ func deleteBlobs(w http.ResponseWriter, r *http.Request) {
 	uid := parseJWTToken(r)
 	fileName, version := parseDeleteForm(r)
 
-	if len(fileName) > 0 && len(version) > 0 {
-
+	if len(uid) > 0 && len(fileName) > 0 && len(version) > 0 {
 		err := storage.DeleteBlob(fileName, uid, version)
 		if err != nil {
 			encodeError(w, http.StatusBadRequest, err.Error())
@@ -84,17 +83,17 @@ func deleteBlobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func downloadBlobs(w http.ResponseWriter, r *http.Request) {
-	// uid := parseJWTToken(r)
-	uid := r.URL.Query().Get("uid")
-	if len(uid) == 0 {
-		uid = parseJWTToken(r)
+	UID := parseJWTToken(r)
+	ownerUID := r.URL.Query().Get("uid")
+	if len(ownerUID) == 0 {
+		ownerUID = parseJWTToken(r)
 	}
 	fileName := r.URL.Query().Get("path")
 	version := r.URL.Query().Get("version")
 	key := r.URL.Query().Get("key")
 
-	if len(fileName) > 0 && len(version) > 0 {
-		stream, err := storage.DownloadBlob(fileName, uid, version, key)
+	if len(ownerUID) > 0 && len(fileName) > 0 && len(version) > 0 && db.CanAccessFile(UID, fileName, ownerUID) {
+		stream, err := storage.DownloadBlob(fileName, ownerUID, version, key)
 		if err != nil {
 			encodeError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -104,5 +103,5 @@ func downloadBlobs(w http.ResponseWriter, r *http.Request) {
 		io.Copy(w, stream)
 		return
 	}
-	encodeError(w, http.StatusBadRequest, "Filename and version must be provided")
+	encodeError(w, http.StatusBadRequest, "Failed to access file")
 }
