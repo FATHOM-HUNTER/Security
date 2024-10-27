@@ -1,0 +1,6 @@
+setupenv.sh
+config.env
+pkged.go
+tmp/*
+static/
+webserver

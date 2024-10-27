@@ -1,0 +1,3 @@
+[submodule "go-basic-webserver-frontend"]
+	path = frontend
+	url = git@github.com:Ovenoboyo/go-basic-webserver-frontend.git

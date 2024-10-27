@@ -1,0 +1,31 @@
+{
+    "go.inferGopath": false,
+    "go.liveErrors": {
+        "enabled": true,
+        "delay": 0,
+    },
+    "go.gotoSymbol.includeGoroot": true,
+    "go.gotoSymbol.includeImports": true,
+    "go.installDependenciesWhenBuilding": true,
+    "go.lintTool": "golint",
+    "go.trace.server": "messages",
+    "go.useCodeSnippetsOnFunctionSuggest": true,
+    "go.useCodeSnippetsOnFunctionSuggestWithoutType": true,
+    "cSpell.words": [
+        "azblob",
+        "bcrypt",
+        "denisenkom",
+        "negroni",
+        "Ovenoboyo",
+        "packr",
+        "pkger",
+        "psql"
+    ],
+    "markdownlint.config": {
+        "MD028": false,
+        "MD025": {
+            "front_matter_title": ""
+        }
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"
+}
